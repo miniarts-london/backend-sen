@@ -36,6 +36,29 @@ For a phone or the published web app, localhost will not work. Use your computer
 
 Restart Expo after changing the env file.
 
+## Deploy on Vercel
+
+Import the **backend-sen** GitHub repo, not the Expo MiniArts app. In Settings → General → Build and Development Settings:
+
+- Framework Preset: **Express**
+- Build Command: leave empty (no override)
+- Output Directory: leave empty (no override)
+
+In Vercel → Project → Settings → Environment Variables, set:
+
+```
+ANTHROPIC_API_KEY=your-rotated-key
+CORS_ORIGINS=https://miniarts-steps--bo374d0y85.expo.app
+```
+
+`CORS_ORIGINS` is the Expo web app origin, not the Vercel URL. After deploy, put the Vercel URL in the app:
+
+```
+EXPO_PUBLIC_EXERCISE_API_URL=https://your-project.vercel.app
+```
+
+Then open `https://your-project.vercel.app/health`. You should see JSON with `"ok": true`.
+
 ## API
 
 `POST /suggest-exercise`

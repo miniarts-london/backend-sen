@@ -1,15 +1,19 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import cors from 'cors';
 import express from 'express';
 import { suggestExerciseWithClaude } from './claude.js';
 import { validateSuggestionRequest } from './validate.js';
+
+if (!process.env.VERCEL) {
+  dotenv.config();
+}
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',')
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ''))
   .filter(Boolean);
 
 app.use(
@@ -19,7 +23,7 @@ app.use(
         callback(null, true);
         return;
       }
-      callback(new Error('Origin not allowed'));
+      callback(null, false);
     },
   }),
 );
@@ -37,7 +41,7 @@ function statusPayload() {
   };
 }
 
-app.get('/', (_req, res) => {
+function sendHome(_req, res) {
   const status = statusPayload();
   res.type('html').send(`<!DOCTYPE html>
 <html lang="en">
@@ -58,23 +62,28 @@ app.get('/', (_req, res) => {
     <li>Check status: <a href="/health"><code>GET /health</code></a></li>
     <li>Ask Claude for a practice: <code>POST /suggest-exercise</code></li>
   </ul>
-  <p>Point the MiniArts Steps app at <code>EXPO_PUBLIC_EXERCISE_API_URL=http://localhost:3001</code></p>
+  <p>Point the MiniArts Steps app at this server’s URL with <code>EXPO_PUBLIC_EXERCISE_API_URL</code>.</p>
 </body>
 </html>`);
-});
+}
 
-app.get('/health', (_req, res) => {
+function sendHealth(_req, res) {
   res.json(statusPayload());
-});
+}
+
+app.get('/', sendHome);
+app.get('/api', sendHome);
+app.get('/health', sendHealth);
+app.get('/api/health', sendHealth);
 
 app.get('/add-plugin', (_req, res) => {
   res.status(404).json({
     error: 'This server is not a plugin host.',
-    hint: 'Open http://localhost:3001/ to see the API status, or POST /suggest-exercise from the MiniArts Steps app.',
+    hint: 'Open GET / to see the API status, or POST /suggest-exercise from the MiniArts Steps app.',
   });
 });
 
-app.post('/suggest-exercise', async (req, res) => {
+async function suggestExercise(req, res, next) {
   const parsed = validateSuggestionRequest(req.body);
   if (parsed.error) {
     res.status(400).json({ error: parsed.error });
@@ -85,13 +94,36 @@ app.post('/suggest-exercise', async (req, res) => {
     const exercise = await suggestExerciseWithClaude(parsed.context);
     res.json(exercise);
   } catch (error) {
-    console.error(error);
-    const message = error instanceof Error ? error.message : 'Could not suggest an exercise.';
-    const status = message.includes('ANTHROPIC_API_KEY') ? 500 : 502;
-    res.status(status).json({ error: message });
+    next(error);
   }
+}
+
+app.post('/suggest-exercise', suggestExercise);
+app.post('/api/suggest-exercise', suggestExercise);
+
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not found',
+    path: req.path,
+    hint: 'Try GET /health or POST /suggest-exercise',
+  });
 });
 
-app.listen(port, () => {
-  console.log(`MiniArts Steps backend listening on http://localhost:${port}`);
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (res.headersSent) {
+    next(err);
+    return;
+  }
+  const message = err instanceof Error ? err.message : 'Could not suggest an exercise.';
+  const status = message.includes('ANTHROPIC_API_KEY') ? 500 : 502;
+  res.status(status).json({ error: message });
 });
+
+export default app;
+
+if (!process.env.VERCEL) {
+  app.listen(port, () => {
+    console.log(`MiniArts Steps backend listening on http://localhost:${port}`);
+  });
+}
