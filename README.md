@@ -48,7 +48,7 @@ In Vercel → Project → Settings → Environment Variables, set:
 
 ```
 ANTHROPIC_API_KEY=your-rotated-key
-CORS_ORIGINS=https://miniarts-steps--bo374d0y85.expo.app
+CORS_ORIGINS=https://miniarts-sen.vercel.app,https://miniarts-steps--bo374d0y85.expo.app
 ```
 
 `CORS_ORIGINS` is the Expo web app origin, not the Vercel URL. After deploy, put the Vercel URL in the app:

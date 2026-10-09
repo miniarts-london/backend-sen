@@ -11,10 +11,16 @@ if (!process.env.VERCEL) {
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
-const allowedOrigins = (process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ''))
-  .filter(Boolean);
+const allowedOrigins = [
+  'http://localhost:8081',
+  'http://localhost:4173',
+  'https://miniarts-sen.vercel.app',
+  'https://miniarts-steps--bo374d0y85.expo.app',
+  ...(process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, ''))
+    .filter(Boolean),
+];
 
 app.use(
   cors({
