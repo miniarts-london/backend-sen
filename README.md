@@ -38,7 +38,7 @@ Restart Expo after changing the env file.
 
 ## Deploy on Vercel
 
-Import the **backend-sen** GitHub repo, not the Expo MiniArts app. In Settings → General → Build and Development Settings:
+Import the **backend-sen** GitHub repo. In Settings → General → Build and Development Settings:
 
 - Framework Preset: **Express**
 - Build Command: leave empty (no override)
